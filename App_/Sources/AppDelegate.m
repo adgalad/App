@@ -15,8 +15,12 @@
 @implementation AppDelegate
 
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-	// Override point for customization after application launch.
+- (BOOL)		application:(UIApplication *)application
+didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+	
+	LoginViewController *viewController = [[LoginViewController alloc] init];
+	[self.window setRootViewController:viewController];
+	
 	return YES;
 }
 

@@ -1,5 +1,5 @@
 //
-//  AppDelegate.h
+//  ViewController.h
 //  App_
 //
 //  Created by Carlos Spaggiari Roa on 10/18/15.
@@ -8,10 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface LoginViewController : UIViewController
 
-@property (strong, nonatomic) UIWindow *window;
-
-
+- (BOOL) loginButtonPressed;
 @end
 
