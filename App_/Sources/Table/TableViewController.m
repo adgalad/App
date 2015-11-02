@@ -37,8 +37,6 @@
 
 
 	[self loadFromServer:nil];
-
-	NSLog(@"%@",self.products);
 	self.allproducts = self.products;
 	
 	[self.tableView setDelegate:self];
@@ -143,7 +141,7 @@
 }
 - (void) addItemToTable:(UIBarButtonItem*) button
 {
-	NSLog(@"Hola");
+
 }
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
@@ -211,7 +209,7 @@
 			NSDate *date = [dateFormat dateFromString:i[@"date"]];
 			
 			[self.products addObject:[Product initWithName: i[@"name"]
-													images: @[i[@"image"]]
+													images: i[@"images"]
 												 thumbnail: i[@"thumbnail"]
 													 price: i[@"price"]
 													  date: date]];

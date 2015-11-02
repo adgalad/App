@@ -13,7 +13,8 @@
 {
 	CGPoint _initialPosition;
 }
-@property UIImageView* image;
+@property UIImageView* imageView;
+@property NSMutableArray *images;
 @property UIPageControl *imageControl;
 @end
 
@@ -22,16 +23,32 @@
 - (void) viewDidLoad
 {
 	[super viewDidLoad];
+	self.images = [[NSMutableArray alloc] init];
+	// Set the thumbnail image as one of the images to display
+	// in the product information
+	[self.images addObject:self.product.thumbnail];
+	
+	// Load the rest of the images from the server
+	for (NSString *i in self.product.images)
+	{
+		UIImage *image =[UIImage imageWithData:
+						 [NSData dataWithContentsOfURL:
+						  [NSURL URLWithString:i]]];
+		if (image){
+			[self.images addObject:image];
+		}
+	}
 	[self organizeView:self.view];
 }
 
+// Setting all controller's UIViews recursively
 - (void) organizeView:(UIView*)root
 {
 	for (UIView* i in root.subviews)
 	{
 		if ([[i restorationIdentifier] isEqual:@"imageView"]){
-			self.image = (UIImageView*) i;
-			[self.image setImage:self.product.thumbnail];
+			self.imageView = (UIImageView*) i;
+			[self.imageView setImage:self.images[0]];
 		}
 		else if ([[i restorationIdentifier] isEqual:@"name"]){
 			[((UILabel*)i) setText:self.product.name];
@@ -47,7 +64,7 @@
 		}
 		else if ([[i restorationIdentifier] isEqual:@"imageControl"]){
 			self.imageControl = (UIPageControl*)i;
-			self.imageControl.numberOfPages = [self.product.images count];
+			self.imageControl.numberOfPages = [self.images count];
 			self.imageControl.hidesForSinglePage = YES;
 			[self.imageControl addTarget:self action:@selector(imageControlTouched:) forControlEvents:UIControlEventTouchUpInside];
 		}
@@ -57,46 +74,47 @@
 	}
 }
 
+// Change the image if the image controller was touched.
 - (void)imageControlTouched:(UIPageControl*)imageControl
 {
-	[self.image setImage:[UIImage
-						  imageNamed:self.product.images[self.imageControl.currentPage]]];
+	[self.imageView setImage:[self.images
+						objectAtIndex:self.imageControl.currentPage]];
 }
+
+// Get the initial position of the touch event.
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
 	UITouch *touch = [touches anyObject];
 	_initialPosition = [touch locationInView:self.view];
 }
 
+// Calculate if the touch event was a swap to the left or to the
+// right, then set correct image.
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
 	
 	for (UITouch *i in [touches allObjects]) {
 		if ([[i.view restorationIdentifier] isEqual:@"Hola"]){
 			CGPoint endPosition = [i locationInView:self.view];
-			
+			// Move to Right
 			if (_initialPosition.x >= endPosition.x &&
-				self.imageControl.currentPage < self.imageControl.numberOfPages){
-				
+				self.imageControl.currentPage < self.imageControl.numberOfPages)
+			{
 				self.imageControl.currentPage =
 					(self.imageControl.currentPage + 1);
 				
-				[self.image setImage:[UIImage
-									  imageNamed:self.product.images[
-											self.imageControl.currentPage]]];
+				[self.imageView setImage:[self.images
+								objectAtIndex:self.imageControl.currentPage]];
 			}
+			// Move to Left
 			else if (self.imageControl.currentPage > 0) {
 				self.imageControl.currentPage =
 						(self.imageControl.currentPage - 1);
-				[self.image setImage:[UIImage
-									  imageNamed:self.product.images[
-											self.imageControl.currentPage]]];
+				[self.imageView setImage:[self.images
+								objectAtIndex:self.imageControl.currentPage]];
 			}
-			
 			return;
 		}
 	};
-
-
 }
 
 - (void)didReceiveMemoryWarning {
