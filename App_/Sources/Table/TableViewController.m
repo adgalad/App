@@ -12,10 +12,10 @@
 @interface TableViewController () <UISearchBarDelegate,UISearchControllerDelegate,UISearchResultsUpdating>
 
 @property UISearchController *searchController;
-@property NSMutableArray  *products;
-@property NSMutableArray  *allproducts;
-@property NSMutableData   *data;
-@property NSURLConnection *connection;
+@property NSMutableArray	*products;
+@property NSMutableArray	*allproducts;
+@property NSMutableData		*data;
+
 @property FilteredTableViewController *filteredTable;
 
 
@@ -60,12 +60,52 @@
 
 }
 
+- (void) loadTableCellsWithJsonFile:(NSDictionary*) JSON
+{
+	if (JSON){
+		[self.products removeAllObjects];
+		
+		for(NSDictionary *i in JSON)
+		{
+			NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+			[dateFormat setDateFormat:@"yyyy-MM-dd"];
+			NSDate *date = [dateFormat dateFromString:i[@"date"]];
+			
+			[self.products addObject:[Product initWithName: i[@"name"]
+													images: i[@"images"]
+												 thumbnail: i[@"thumbnail"]
+													 price: i[@"price"]
+													  date: date]];
+		}
+		[self.tableView reloadData];
+	}
+}
 -(void) loadFromServer:(UIRefreshControl*)rc
 {
 	NSURLRequest *request = [NSURLRequest requestWithURL:
 								[NSURL URLWithString:@"http://localhost:3000/products.json"]];
-	self.connection = [[NSURLConnection alloc]
-					   initWithRequest:request delegate:self];
+//	self.conection = [[NSURLConnection alloc]
+//					  initWithRequest:request delegate:self];
+	
+	NSURLSession *session = [NSURLSession sharedSession];
+	
+	NSURLSessionDataTask *dataTask;
+	__block NSDictionary *JSON;
+	
+	dataTask = [session dataTaskWithRequest:request completionHandler:
+		^(NSData *data, NSURLResponse *response, NSError *error){
+
+			if (!data){
+				NSLog(@"%@",error);
+				return;
+			}
+			JSON = [NSJSONSerialization JSONObjectWithData:data options: NSJSONReadingMutableContainers error: &error];
+			NSLog(@"%@",JSON);
+			[self loadTableCellsWithJsonFile:JSON];
+		}
+	 ];
+	
+	[dataTask resume];
 	[self.refreshControl endRefreshing];
 }
 
@@ -217,6 +257,7 @@
 		[self.tableView reloadData];
 	}
 
+	
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
