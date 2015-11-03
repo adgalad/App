@@ -9,6 +9,6 @@
 #import <UIKit/UIKit.h>
 #import "TableViewCell.h"
 
-@interface TableViewController : UITableViewController
+@interface TableViewController : UITableViewController<NSURLSessionDelegate, NSURLSessionDataDelegate>
 
 @end

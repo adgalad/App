@@ -60,11 +60,16 @@
 
 }
 
-- (void) loadTableCellsWithJsonFile:(NSDictionary*) JSON
+- (void) loadTableCellsWithJsonFile:(NSData*) jsonData
 {
+	NSError *error;
+	NSDictionary *JSON = [NSJSONSerialization
+						  JSONObjectWithData:jsonData
+									 options: NSJSONReadingMutableContainers
+									   error: &error
+							  ];
 	if (JSON){
 		[self.products removeAllObjects];
-		
 		for(NSDictionary *i in JSON)
 		{
 			NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
@@ -84,29 +89,28 @@
 {
 	NSURLRequest *request = [NSURLRequest requestWithURL:
 								[NSURL URLWithString:@"http://localhost:3000/products.json"]];
-//	self.conection = [[NSURLConnection alloc]
-//					  initWithRequest:request delegate:self];
 	
-	NSURLSession *session = [NSURLSession sharedSession];
+	NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+	NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfig delegate:self delegateQueue:nil];
 	
 	NSURLSessionDataTask *dataTask;
-	__block NSDictionary *JSON;
 	
-	dataTask = [session dataTaskWithRequest:request completionHandler:
-		^(NSData *data, NSURLResponse *response, NSError *error){
-
-			if (!data){
-				NSLog(@"%@",error);
-				return;
-			}
-			JSON = [NSJSONSerialization JSONObjectWithData:data options: NSJSONReadingMutableContainers error: &error];
-			NSLog(@"%@",JSON);
-			[self loadTableCellsWithJsonFile:JSON];
-		}
-	 ];
+	dataTask = [session dataTaskWithRequest:request];
 	
 	[dataTask resume];
 	[self.refreshControl endRefreshing];
+}
+
+#pragma mark NSURLSessionDataTask Delegate Methods
+
+- (void)URLSession:(NSURLSession *)session
+		  dataTask:(NSURLSessionDataTask *)dataTask
+	didReceiveData:(NSData *)data
+{
+	NSLog(@"Recibio el json");
+	[self performSelectorOnMainThread:@selector(loadTableCellsWithJsonFile:)
+	 								   withObject:data
+	 								waitUntilDone:NO];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -213,56 +217,4 @@
     // Pass the selected object to the new view controller.
 }
 */
-
-#pragma mark NSURLConnection Delegate Methods
-
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-	// A response has been received, this is where we initialize the instance var you created
-	// so that we can append data to it in the didReceiveData method
-	// Furthermore, this method is called each time there is a redirect so reinitializing it
-	// also serves to clear it
-	_data = [[NSMutableData alloc] init];
-}
-
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
-	// Append the new data to the instance variable you declared
-	[_data appendData:data];
-}
-
-- (NSCachedURLResponse *)connection:(NSURLConnection *)connection
-				  willCacheResponse:(NSCachedURLResponse*)cachedResponse {
-	// Return nil to indicate not necessary to store a cached response for this connection
-	return nil;
-}
-
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-	NSString *responseString = [[NSString alloc] initWithData:_data encoding:NSUTF8StringEncoding];
-	NSError *e = nil;
-	NSData *jsonData = [responseString dataUsingEncoding:NSUTF8StringEncoding];
-	NSDictionary *JSON = [NSJSONSerialization JSONObjectWithData:jsonData options: NSJSONReadingMutableContainers error: &e];
-	if (JSON){
-		[self.products removeAllObjects];
-		for(NSDictionary *i in JSON)
-		{
-			NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-			[dateFormat setDateFormat:@"yyyy-MM-dd"];
-			NSDate *date = [dateFormat dateFromString:i[@"date"]];
-			
-			[self.products addObject:[Product initWithName: i[@"name"]
-													images: i[@"images"]
-												 thumbnail: i[@"thumbnail"]
-													 price: i[@"price"]
-													  date: date]];
-		}
-		[self.tableView reloadData];
-	}
-
-	
-}
-
-- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
-	// The request has failed for some reason!
-	// Check the error var
-}
-
 @end
